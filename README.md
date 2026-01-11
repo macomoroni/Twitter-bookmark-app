@@ -4,7 +4,11 @@ A full-stack application to organize, search, and manage your Twitter bookmarks 
 
 ## ✨ Features
 
-- 🚀 **Automatic Sync** - Browser extension automatically captures and syncs bookmarks
+- 🚀 **Automatic Background Sync** - Syncs every 15-360 minutes WITHOUT needing to visit Twitter! (See [BACKGROUND-SYNC.md](BACKGROUND-SYNC.md))
+  - Runs in background while you browse
+  - Configurable sync intervals (15min - 6 hours)
+  - Desktop notifications for new bookmarks
+  - No manual work required!
 - 🤖 **Auto-Organization** - AI-powered automatic categorization and tagging! (See [AUTO-ORGANIZATION.md](AUTO-ORGANIZATION.md))
   - 12 built-in categories (Tech, AI, Business, Science, etc.)
   - Smart tag extraction with NLP

@@ -16,6 +16,10 @@ const statusText = document.getElementById('statusText')!;
 const userEmail = document.getElementById('userEmail')!;
 const syncedCount = document.getElementById('syncedCount')!;
 const pageCount = document.getElementById('pageCount')!;
+const autoSyncToggle = document.getElementById('autoSyncToggle') as HTMLInputElement;
+const autoSyncStatus = document.getElementById('autoSyncStatus')!;
+const syncInterval = document.getElementById('syncInterval') as HTMLSelectElement;
+const lastSyncTime = document.getElementById('lastSyncTime')!;
 
 // Show message
 function showMessage(text: string, type: 'success' | 'error') {
@@ -28,7 +32,13 @@ function showMessage(text: string, type: 'success' | 'error') {
 
 // Load config and update UI
 async function loadConfig() {
-  const data = await chrome.storage.sync.get(['config', 'syncedCount']);
+  const data = await chrome.storage.sync.get([
+    'config',
+    'syncedCount',
+    'autoSyncEnabled',
+    'syncIntervalMinutes',
+    'lastSyncTime',
+  ]);
   const config = data.config;
 
   if (config.token) {
@@ -40,6 +50,32 @@ async function loadConfig() {
 
     // Update API URL in input
     apiUrlInput.value = config.apiUrl;
+
+    // Update auto-sync settings
+    const autoSyncEnabled = data.autoSyncEnabled !== false; // Default true
+    autoSyncToggle.checked = autoSyncEnabled;
+    autoSyncStatus.textContent = autoSyncEnabled ? 'Enabled' : 'Disabled';
+
+    const intervalMinutes = data.syncIntervalMinutes || 30;
+    syncInterval.value = intervalMinutes.toString();
+
+    // Update last sync time
+    if (data.lastSyncTime) {
+      const lastSync = new Date(data.lastSyncTime);
+      const now = new Date();
+      const diffMinutes = Math.floor((now.getTime() - lastSync.getTime()) / 60000);
+
+      if (diffMinutes < 1) {
+        lastSyncTime.textContent = 'Just now';
+      } else if (diffMinutes < 60) {
+        lastSyncTime.textContent = `${diffMinutes}m ago`;
+      } else {
+        const diffHours = Math.floor(diffMinutes / 60);
+        lastSyncTime.textContent = `${diffHours}h ago`;
+      }
+    } else {
+      lastSyncTime.textContent = 'Never';
+    }
 
     // Get current page bookmark count
     getCurrentPageBookmarkCount();
@@ -177,8 +213,46 @@ logoutBtn.addEventListener('click', async () => {
   }
 });
 
+// Auto-sync toggle handler
+autoSyncToggle.addEventListener('change', async () => {
+  const enabled = autoSyncToggle.checked;
+  const intervalMinutes = parseInt(syncInterval.value);
+
+  const response = await chrome.runtime.sendMessage({
+    type: 'UPDATE_SYNC_SETTINGS',
+    payload: { enabled, intervalMinutes },
+  });
+
+  if (response.success) {
+    autoSyncStatus.textContent = enabled ? 'Enabled' : 'Disabled';
+    showMessage(
+      `Auto-sync ${enabled ? 'enabled' : 'disabled'}`,
+      'success'
+    );
+  }
+});
+
+// Sync interval change handler
+syncInterval.addEventListener('change', async () => {
+  const enabled = autoSyncToggle.checked;
+  const intervalMinutes = parseInt(syncInterval.value);
+
+  const response = await chrome.runtime.sendMessage({
+    type: 'UPDATE_SYNC_SETTINGS',
+    payload: { enabled, intervalMinutes },
+  });
+
+  if (response.success) {
+    const hours = intervalMinutes >= 60 ? `${intervalMinutes / 60}h` : `${intervalMinutes}min`;
+    showMessage(`Sync interval updated to ${hours}`, 'success');
+  }
+});
+
 // Load initial config
 loadConfig();
 
-// Refresh bookmark count every 5 seconds
-setInterval(getCurrentPageBookmarkCount, 5000);
+// Refresh bookmark count and sync time every 5 seconds
+setInterval(() => {
+  getCurrentPageBookmarkCount();
+  loadConfig(); // Also refresh last sync time
+}, 5000);

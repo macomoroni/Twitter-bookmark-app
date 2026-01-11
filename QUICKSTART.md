@@ -116,15 +116,18 @@ npm run build
 
 ✅ Extension is now connected!
 
-### 3. Sync Your Bookmarks
+### 3. Bookmarks Sync Automatically! 🎉
 
-1. Go to https://twitter.com/i/bookmarks (or https://x.com/i/bookmarks)
-2. The extension will **automatically** detect bookmarks
-3. Scroll down to load more bookmarks
-4. Extension syncs them in the background
+**Auto-sync is already running!** The extension syncs every 30 minutes in the background.
 
-**Or sync manually:**
+**No need to visit Twitter!** Just wait a bit and bookmarks appear automatically.
+
+**Want to sync now?**
 - Click extension icon → "Sync Bookmarks Now"
+
+**Customize sync:**
+- Click extension → Toggle "Auto-Sync" on/off
+- Change interval: 15min, 30min, 1h, 2h, or 6h
 
 ### 4. View Auto-Organized Bookmarks! 🎉
 

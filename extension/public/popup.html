@@ -242,6 +242,34 @@
       </div>
     </div>
 
+    <div class="status">
+      <div class="status-item">
+        <span class="status-label">Auto-Sync</span>
+        <span class="status-value">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="autoSyncToggle" style="width: auto; margin: 0;">
+            <span id="autoSyncStatus">Enabled</span>
+          </label>
+        </span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Interval</span>
+        <span class="status-value">
+          <select id="syncInterval" style="width: auto; padding: 4px 8px; font-size: 12px;">
+            <option value="15">15 min</option>
+            <option value="30" selected>30 min</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+            <option value="360">6 hours</option>
+          </select>
+        </span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Last Sync</span>
+        <span class="status-value" id="lastSyncTime" style="font-size: 11px;">Never</span>
+      </div>
+    </div>
+
     <div class="config">
       <button id="syncBtn">Sync Bookmarks Now</button>
       <button id="logoutBtn" class="button-secondary">Logout</button>

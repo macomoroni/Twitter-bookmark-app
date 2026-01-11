@@ -1,19 +1,39 @@
 import { Config, Bookmark, StorageData } from './types';
 
-// Initialize storage
-chrome.runtime.onInstalled.addListener(() => {
+// Initialize storage and alarms
+chrome.runtime.onInstalled.addListener(async () => {
   const defaultConfig: Config = {
     apiUrl: 'http://localhost:3001/api',
     token: null,
     email: null,
   };
 
-  chrome.storage.sync.set({
+  await chrome.storage.sync.set({
     config: defaultConfig,
     syncedCount: 0,
+    autoSyncEnabled: true,
+    syncIntervalMinutes: 30, // Default: every 30 minutes
+    lastSyncTime: null,
   });
 
-  console.log('Twitter Bookmarks Organizer installed!');
+  // Setup periodic sync alarm
+  chrome.alarms.create('autoSync', {
+    periodInMinutes: 30,
+  });
+
+  console.log('Twitter Bookmarks Organizer installed! Auto-sync every 30 minutes.');
+});
+
+// Handle alarm for automatic background sync
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'autoSync') {
+    const data = await chrome.storage.sync.get(['config', 'autoSyncEnabled']);
+
+    if (data.autoSyncEnabled && data.config?.token) {
+      console.log('Running automatic background sync...');
+      await performBackgroundSync();
+    }
+  }
 });
 
 // Listen for messages from content script
@@ -40,6 +60,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'GET_CONFIG') {
     getConfig().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'UPDATE_SYNC_SETTINGS') {
+    updateSyncSettings(message.payload).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'TRIGGER_MANUAL_SYNC') {
+    performBackgroundSync().then(() => sendResponse({ success: true }));
     return true;
   }
 });
@@ -126,7 +156,102 @@ async function handleLogout() {
   };
 
   await chrome.storage.sync.set({ config, syncedCount: 0 });
+
+  // Clear auto-sync alarm
+  chrome.alarms.clear('autoSync');
+
   return { success: true };
+}
+
+async function updateSyncSettings(payload: { enabled: boolean; intervalMinutes: number }) {
+  await chrome.storage.sync.set({
+    autoSyncEnabled: payload.enabled,
+    syncIntervalMinutes: payload.intervalMinutes,
+  });
+
+  // Update alarm
+  chrome.alarms.clear('autoSync');
+
+  if (payload.enabled) {
+    chrome.alarms.create('autoSync', {
+      periodInMinutes: payload.intervalMinutes,
+    });
+  }
+
+  return { success: true };
+}
+
+/**
+ * Perform automatic background sync
+ * Opens Twitter bookmarks page in background, scrapes, and syncs
+ */
+async function performBackgroundSync() {
+  try {
+    console.log('[Auto-Sync] Starting background sync...');
+
+    // Create a hidden tab to load the bookmarks page
+    const tab = await chrome.tabs.create({
+      url: 'https://twitter.com/i/bookmarks',
+      active: false, // Open in background
+    });
+
+    if (!tab.id) {
+      throw new Error('Failed to create tab');
+    }
+
+    // Wait for tab to load
+    await new Promise((resolve) => {
+      const listener = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
+        if (tabId === tab.id && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve(null);
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve(null);
+      }, 30000);
+    });
+
+    // Give it a bit more time for dynamic content to load
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Send message to content script to scan and sync
+    try {
+      const response = await chrome.tabs.sendMessage(tab.id, { type: 'SYNC_NOW' });
+
+      if (response && response.success) {
+        console.log('[Auto-Sync] Success:', response.results);
+
+        // Update last sync time
+        await chrome.storage.sync.set({
+          lastSyncTime: new Date().toISOString(),
+        });
+
+        // Show notification
+        if (response.results.created > 0) {
+          chrome.notifications?.create({
+            type: 'basic',
+            iconUrl: 'icons/icon128.png',
+            title: 'Bookmarks Synced!',
+            message: `Added ${response.results.created} new bookmarks`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[Auto-Sync] Content script error:', error);
+    }
+
+    // Close the tab
+    await chrome.tabs.remove(tab.id);
+
+    console.log('[Auto-Sync] Background sync completed');
+  } catch (error) {
+    console.error('[Auto-Sync] Failed:', error);
+  }
 }
 
 async function syncBookmarks(bookmarks: Bookmark[]) {
