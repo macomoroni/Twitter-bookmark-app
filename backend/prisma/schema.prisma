@@ -1,0 +1,104 @@
+// Prisma Schema for Twitter Bookmarks Organizer
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookmarks  Bookmark[]
+  categories Category[]
+  tags       Tag[]
+
+  @@map("users")
+}
+
+model Bookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  tweetId    String
+  tweetUrl   String
+  text       String   @db.Text
+  authorName String
+  authorUsername String
+  authorProfileImage String?
+  mediaUrls  String[] @default([])
+  createdAt  DateTime // When bookmark was created on Twitter
+  addedAt    DateTime @default(now()) // When added to our system
+  updatedAt  DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BookmarkCategory[]
+  tags       BookmarkTag[]
+
+  @@unique([userId, tweetId])
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("bookmarks")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#3b82f6") // Tailwind blue-500
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks BookmarkCategory[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks BookmarkTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("tags")
+}
+
+model BookmarkCategory {
+  bookmarkId String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  bookmark Bookmark @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, categoryId])
+  @@map("bookmark_categories")
+}
+
+model BookmarkTag {
+  bookmarkId String
+  tagId      String
+  createdAt  DateTime @default(now())
+
+  bookmark Bookmark @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, tagId])
+  @@map("bookmark_tags")
+}
