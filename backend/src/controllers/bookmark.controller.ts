@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { autoCategorizationService } from '../services/auto-categorization.service';
+import { autoTaggingService } from '../services/auto-tagging.service';
 
 const createBookmarkSchema = z.object({
   tweetId: z.string(),
@@ -54,6 +56,34 @@ export async function createBookmark(req: AuthRequest, res: Response) {
         mediaUrls: data.mediaUrls || [],
         createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
       },
+    });
+
+    // Auto-categorize bookmark
+    try {
+      await autoCategorizationService.categorizeBookmark(
+        userId,
+        bookmark.id,
+        data.text
+      );
+    } catch (error) {
+      console.error('Auto-categorization failed:', error);
+    }
+
+    // Auto-tag bookmark
+    try {
+      await autoTaggingService.autoTagBookmark(
+        userId,
+        bookmark.id,
+        data.text,
+        data.authorUsername
+      );
+    } catch (error) {
+      console.error('Auto-tagging failed:', error);
+    }
+
+    // Fetch bookmark with categories and tags
+    const bookmarkWithDetails = await prisma.bookmark.findUnique({
+      where: { id: bookmark.id },
       include: {
         categories: {
           include: {
@@ -69,8 +99,8 @@ export async function createBookmark(req: AuthRequest, res: Response) {
     });
 
     res.status(201).json({
-      message: 'Bookmark created successfully',
-      bookmark,
+      message: 'Bookmark created and auto-organized successfully',
+      bookmark: bookmarkWithDetails,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -292,7 +322,7 @@ export async function bulkCreateBookmarks(req: AuthRequest, res: Response) {
         }
 
         // Create bookmark
-        await prisma.bookmark.create({
+        const bookmark = await prisma.bookmark.create({
           data: {
             userId,
             tweetId: data.tweetId,
@@ -305,6 +335,14 @@ export async function bulkCreateBookmarks(req: AuthRequest, res: Response) {
             createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
           },
         });
+
+        // Auto-categorize and auto-tag (async, don't wait)
+        autoCategorizationService.categorizeBookmark(userId, bookmark.id, data.text).catch(err =>
+          console.error('Auto-categorization failed:', err)
+        );
+        autoTaggingService.autoTagBookmark(userId, bookmark.id, data.text, data.authorUsername).catch(err =>
+          console.error('Auto-tagging failed:', err)
+        );
 
         results.created++;
       } catch (error) {

@@ -126,13 +126,21 @@ npm run build
 **Or sync manually:**
 - Click extension icon → "Sync Bookmarks Now"
 
-### 4. View & Organize
+### 4. View Auto-Organized Bookmarks! 🎉
 
 1. Go back to http://localhost:5173
-2. You should see your bookmarks!
-3. Create categories with the "+ New" button
-4. Add tags to organize
-5. Use search to find bookmarks
+2. You should see your bookmarks **already organized!**
+3. Bookmarks are automatically:
+   - ✅ Categorized (Tech, AI, Business, etc.)
+   - ✅ Tagged with relevant keywords
+   - ✅ Sorted by author and topics
+
+**No manual sorting needed!** The AI does it for you! 🤖
+
+**Customize if you want:**
+- Create custom categories with "+ New" button
+- Add/edit tags manually
+- Use search to find specific bookmarks
 
 ## Troubleshooting
 

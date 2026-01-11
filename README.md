@@ -5,8 +5,13 @@ A full-stack application to organize, search, and manage your Twitter bookmarks 
 ## ✨ Features
 
 - 🚀 **Automatic Sync** - Browser extension automatically captures and syncs bookmarks
+- 🤖 **Auto-Organization** - AI-powered automatic categorization and tagging! (See [AUTO-ORGANIZATION.md](AUTO-ORGANIZATION.md))
+  - 12 built-in categories (Tech, AI, Business, Science, etc.)
+  - Smart tag extraction with NLP
+  - Detects programming languages and tech stack
+  - Optional OpenAI integration for advanced categorization
 - 🔍 **Powerful Search** - Full-text search with filters by categories, tags, authors, and dates
-- 🏷️ **Categories & Tags** - Organize bookmarks with custom categories and tags
+- 🏷️ **Categories & Tags** - Auto-organized or manually customizable
 - 📊 **Statistics** - Track your bookmark collection with insightful stats
 - 🎨 **Modern UI** - Clean, responsive interface built with React and Tailwind CSS
 - 🔐 **Secure** - JWT authentication with bcrypt password hashing
@@ -190,22 +195,28 @@ npm run build
 2. Click the extension icon
 3. Click "Sync Bookmarks Now"
 
-### 4. Organize Your Bookmarks
+### 4. Enjoy Auto-Organization! 🤖
 
-**Create Categories:**
-1. In the web app sidebar, click "+ New" under Categories
-2. Enter a category name
-3. Click bookmarks to assign them to categories
+**Your bookmarks are automatically organized!**
 
-**Add Tags:**
-1. Click "+ New" under Tags
-2. Enter tag names
-3. Tag your bookmarks for better organization
+When you sync bookmarks, they are automatically:
+- ✅ **Categorized** into 12 built-in categories (Tech, AI, Business, etc.)
+- ✅ **Tagged** with relevant keywords, hashtags, and topics
+- ✅ **Organized** by author, tech stack, and programming languages
 
-**Search:**
+**No manual work required!** 🎉
+
+**Want to customize?**
+- Create custom categories (click "+ New" under Categories)
+- Add/remove tags manually
+- Edit any bookmark's organization
+
+**Search & Filter:**
 - Use the search bar to find bookmarks by text, author, or content
-- Filter by categories and tags in the sidebar
+- Filter by auto-assigned categories and tags in the sidebar
 - Sort by date, relevance, or author
+
+**Learn more:** See [AUTO-ORGANIZATION.md](AUTO-ORGANIZATION.md) for detailed documentation.
 
 ## 🗄️ Database Schema
 
